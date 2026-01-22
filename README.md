@@ -1,84 +1,104 @@
-<picture class="github-only">
-  <source media="(prefers-color-scheme: light)" srcset="https://langchain-ai.github.io/langgraph/static/wordmark_dark.svg">
-  <source media="(prefers-color-scheme: dark)" srcset="https://langchain-ai.github.io/langgraph/static/wordmark_light.svg">
-  <img alt="LangGraph Logo" src="https://langchain-ai.github.io/langgraph/static/wordmark_dark.svg" width="80%">
-</picture>
+# Reflexion Agent with LangGraph 🦜🕸️
 
-<div>
-<br>
-</div>
+LangGraph와 LangChain을 활용해 구현한 **Reflexion Agent** 예제 프로젝트입니다.  
+이 에이전트는 **자기 성찰(Self-Reflection)** 과 **반복적 개선(Iterative Refinement)** 을 통해 응답의 품질을 점진적으로 향상시키도록 설계되었습니다.
 
-[![Version](https://img.shields.io/pypi/v/langgraph.svg)](https://pypi.org/project/langgraph/)
-[![Downloads](https://static.pepy.tech/badge/langgraph/month)](https://pepy.tech/project/langgraph)
-[![Open Issues](https://img.shields.io/github/issues-raw/langchain-ai/langgraph)](https://github.com/langchain-ai/langgraph/issues)
-[![Docs](https://img.shields.io/badge/docs-latest-blue)](https://langchain-ai.github.io/langgraph/)
-
-Trusted by companies shaping the future of agents – including Klarna, Replit, Elastic, and more – LangGraph is a low-level orchestration framework for building, managing, and deploying long-running, stateful agents.
-
-## Get started
-
-Install LangGraph:
-
-```
-pip install -U langgraph
-```
-
-Then, create an agent [using prebuilt components](https://langchain-ai.github.io/langgraph/agents/agents/):
-
-```python
-# pip install -qU "langchain[anthropic]" to call the model
-
-from langgraph.prebuilt import create_react_agent
-
-def get_weather(city: str) -> str:
-    """Get weather for a given city."""
-    return f"It's always sunny in {city}!"
-
-agent = create_react_agent(
-    model="anthropic:claude-3-7-sonnet-latest",
-    tools=[get_weather],
-    prompt="You are a helpful assistant"
-)
-
-# Run the agent
-agent.invoke(
-    {"messages": [{"role": "user", "content": "what is the weather in sf"}]}
-)
+LangGraph의 **그래프 기반 제어 흐름**을 활용하여  
+초기 응답 생성 → 도구 실행 → 비판 및 수정 → 재작성이라는 사이클을 구조적으로 구현합니다.
+```mermaid
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph LR;
+        __start__([__start__]):::first
+        draft(draft)
+        execute_tools(execute_tools)
+        revise(revise)
+        __end__([__end__]):::last
+        __start__ --> draft;
+        draft --> execute_tools;
+        execute_tools --> revise;
+        revise -.-> draft;
+        revise -.-> execute_tools;
+        revise -.-> __end__;
+        classDef default fill:#f2f0ff,line-height:1.2
+        classDef first fill-opacity:0
+        classDef last fill:#bfb6fc
 ```
 
-For more information, see the [Quickstart](https://langchain-ai.github.io/langgraph/agents/agents/). Or, to learn how to build an [agent workflow](https://langchain-ai.github.io/langgraph/concepts/low_level/) with a customizable architecture, long-term memory, and other complex task handling, see the [LangGraph basics tutorials](https://langchain-ai.github.io/langgraph/tutorials/get-started/1-build-basic-chatbot/).
 
-## Core benefits
+## 주요 기능
 
-LangGraph provides low-level supporting infrastructure for *any* long-running, stateful workflow or agent. LangGraph does not abstract prompts or architecture, and provides the following central benefits:
+- **자기 성찰(Self-Reflection)**: 응답 개선을 위한 정교한 성찰 메커니즘 구현
+- **반복적 개선(Iterative Refinement)**: 그래프 기반 접근법을 통한 응답의 점진적 향상
+- **통합 검색**: Tavily 검색을 활용한 향상된 응답 정확도
+- **구조화된 출력**: Pydantic 모델을 사용한 안정적인 데이터 처리
 
-- [Durable execution](https://langchain-ai.github.io/langgraph/concepts/durable_execution/): Build agents that persist through failures and can run for extended periods, automatically resuming from exactly where they left off.
-- [Human-in-the-loop](https://langchain-ai.github.io/langgraph/concepts/human_in_the_loop/): Seamlessly incorporate human oversight by inspecting and modifying agent state at any point during execution.
-- [Comprehensive memory](https://langchain-ai.github.io/langgraph/concepts/memory/): Create truly stateful agents with both short-term working memory for ongoing reasoning and long-term persistent memory across sessions.
-- [Debugging with LangSmith](http://www.langchain.com/langsmith): Gain deep visibility into complex agent behavior with visualization tools that trace execution paths, capture state transitions, and provide detailed runtime metrics.
-- [Production-ready deployment](https://langchain-ai.github.io/langgraph/concepts/deployment_options/): Deploy sophisticated agent systems confidently with scalable infrastructure designed to handle the unique challenges of stateful, long-running workflows.
+## 아키텍처
 
-## LangGraph’s ecosystem
+이 에이전트는 다음 구성 요소로 이루어진 그래프 기반 아키텍처를 사용합니다:
 
-While LangGraph can be used standalone, it also integrates seamlessly with any LangChain product, giving developers a full suite of tools for building agents. To improve your LLM application development, pair LangGraph with:
+- **진입점(Entry Point)**: 초기 응답 생성을 위한 `draft` 노드
+- **처리 노드(Processing Nodes)**: 개선을 위한 `execute_tools` 및 `revise` 노드
+- **최대 반복 횟수**: N회 (설정 가능)
+- **체인 구성 요소**: GPT를 사용하는 First Responder와 Revisor
+- **도구 통합**: 웹 조사를 위한 Tavily Search
 
-- [LangSmith](http://www.langchain.com/langsmith) — Helpful for agent evals and observability. Debug poor-performing LLM app runs, evaluate agent trajectories, gain visibility in production, and improve performance over time.
-- [LangSmith Deployment](https://langchain-ai.github.io/langgraph/concepts/langgraph_platform/) — Deploy and scale agents effortlessly with a purpose-built deployment platform for long running, stateful workflows. Discover, reuse, configure, and share agents across teams — and iterate quickly with visual prototyping in [LangGraph Studio](https://langchain-ai.github.io/langgraph/concepts/langgraph_studio/).
-- [LangChain](https://docs.langchain.com/oss/python/langchain/overview) – Provides integrations and composable components to streamline LLM application development.
+## 환경 변수 설정
 
-> [!NOTE]
-> Looking for the JS version of LangGraph? See the [JS repo](https://github.com/langchain-ai/langgraphjs) and the [JS docs](https://langchain-ai.github.io/langgraphjs/).
+이 프로젝트를 실행하려면 `.env` 파일에 다음 환경 변수를 추가해야 합니다:
+```bash
+OPENAI_API_KEY=your_openai_api_key_here
+TAVILY_API_KEY=your_tavily_api_key_here
+LANGCHAIN_API_KEY=your_langchain_api_key_here  # 선택사항, 트레이싱용
+LANGCHAIN_TRACING_V2=true                      # 선택사항
+LANGCHAIN_PROJECT=reflexion agent               # 선택사항
+```
 
-## Additional resources
+> **중요**: `LANGCHAIN_TRACING_V2=true`로 트레이싱을 활성화하는 경우, `LANGCHAIN_API_KEY`에 유효한 LangSmith API 키가 설정되어 있어야 합니다. 유효한 API 키 없이 실행하면 오류가 발생합니다. 트레이싱이 필요하지 않다면 해당 환경 변수들을 제거하거나 주석 처리하세요.
 
-- [Guides](https://langchain-ai.github.io/langgraph/guides/): Quick, actionable code snippets for topics such as streaming, adding memory & persistence, and design patterns (e.g. branching, subgraphs, etc.).
-- [Reference](https://langchain-ai.github.io/langgraph/reference/graphs/): Detailed reference on core classes, methods, how to use the graph and checkpointing APIs, and higher-level prebuilt components.
-- [Examples](https://langchain-ai.github.io/langgraph/examples/): Guided examples on getting started with LangGraph.
-- [LangChain Forum](https://forum.langchain.com/): Connect with the community and share all of your technical questions, ideas, and feedback.
-- [LangChain Academy](https://academy.langchain.com/courses/intro-to-langgraph): Learn the basics of LangGraph in our free, structured course.
-- [Templates](https://langchain-ai.github.io/langgraph/concepts/template_applications/): Pre-built reference apps for common agentic workflows (e.g. ReAct agent, memory, retrieval etc.) that can be cloned and adapted.
-- [Case studies](https://www.langchain.com/built-with-langgraph): Hear how industry leaders use LangGraph to ship AI applications at scale.
+## 로컬 실행 방법
 
-## Acknowledgements
+프로젝트 클론:
+```bash
+git clone 
+cd reflexion-agent
+```
 
-LangGraph is inspired by [Pregel](https://research.google/pubs/pub37252/) and [Apache Beam](https://beam.apache.org/). The public interface draws inspiration from [NetworkX](https://networkx.org/documentation/latest/). LangGraph is built by LangChain Inc, the creators of LangChain, but can be used without LangChain.
+의존성 설치:
+```bash
+poetry install
+```
+
+에이전트 실행:
+```bash
+poetry run python main.py
+```
+
+## 개발 환경 설정
+
+1. API 키 발급받기:
+   - [OpenAI Platform](https://platform.openai.com/) - GPT 접근용
+   - [Tavily](https://tavily.com/) - 검색 기능용
+   - [LangSmith](https://smith.langchain.com/) (선택사항) - 프로젝트 로그 추적적용
+
+2. 예제 환경 파일 복사:
+```bash
+   cp .env.example .env
+```
+
+3. `.env` 파일에 API 키 입력
+
+## Notes
+
+본 프로젝트는 학습 및 실험 목적의 예제입니다.
+
+반복 횟수, 프롬프트 구조, 종료 조건은 자유롭게 확장 가능합니다.
+```
+
+## 🔗 링크
+[![portfolio](https://img.shields.io/badge/포트폴리오-000?style=for-the-badge&logo=ko-fi&logoColor=white)](https://www.udemy.com/course/langgraph/?referralCode=FEA50E8CBA24ECD48212)
+[![linkedin](https://img.shields.io/badge/linkedin-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/eden-marco/)
+[![Twitter Follow](https://img.shields.io/twitter/follow/EdenEmarco177?style=social)](https://twitter.com/EdenEmarco177)
