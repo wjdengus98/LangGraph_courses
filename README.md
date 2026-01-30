@@ -1,84 +1,107 @@
-<picture class="github-only">
-  <source media="(prefers-color-scheme: light)" srcset="https://langchain-ai.github.io/langgraph/static/wordmark_dark.svg">
-  <source media="(prefers-color-scheme: dark)" srcset="https://langchain-ai.github.io/langgraph/static/wordmark_light.svg">
-  <img alt="LangGraph Logo" src="https://langchain-ai.github.io/langgraph/static/wordmark_dark.svg" width="80%">
-</picture>
+# 🦜🪞 LangGraph Reflection Agent
 
-<div>
-<br>
-</div>
+This repository contains a reflection-style agent architecture built with LangGraph that improves output quality through self-critique and refinement.
 
-[![Version](https://img.shields.io/pypi/v/langgraph.svg)](https://pypi.org/project/langgraph/)
-[![Downloads](https://static.pepy.tech/badge/langgraph/month)](https://pepy.tech/project/langgraph)
-[![Open Issues](https://img.shields.io/github/issues-raw/langchain-ai/langgraph)](https://github.com/langchain-ai/langgraph/issues)
-[![Docs](https://img.shields.io/badge/docs-latest-blue)](https://langchain-ai.github.io/langgraph/)
+## ✨ Overview
 
-Trusted by companies shaping the future of agents – including Klarna, Replit, Elastic, and more – LangGraph is a low-level orchestration framework for building, managing, and deploying long-running, stateful agents.
+The reflection agent uses a feedback loop between a generation component and a reflection component to iteratively improve responses to user queries. In this implementation, we've created a Twitter assistant that enhances tweets through multiple rounds of critique and revision.
 
-## Get started
+```mermaid
+graph LR;
+    __start__([__start__]):::first
+    generate(generate)
+    reflect(reflect)
+    __end__([__end__]):::last
+    __start__ --> generate;
+    generate --> reflect;
+    reflect -.-> generate;
+    generate -.-> __end__;
+    classDef default fill:#f2f0ff,line-height:1.2
+    classDef first fill-opacity:0
+    classDef last fill:#bfb6fc
+```
+[![udemy](https://img.shields.io/badge/LangGraph🦜🔗%20Udemy%20Course-%20Coupon%20%2412.99-brightgreen)](https://www.udemy.com/course/langgraph/?couponCode=APRIL-2025)
 
-Install LangGraph:
+## 🔄 How It Works
+
+1. **Generate**: The initial component creates a response (in our case, a tweet) based on the user's input
+2. **Reflect**: The reflection component evaluates the generated content and provides specific feedback for improvement
+3. **Loop**: The generation component refines its output based on the reflection's feedback
+4. **Termination**: The process ends after a predetermined number of iterations (currently set to 6)
+
+This approach creates a self-improving system that produces higher quality outputs through deliberate reflection.
+
+## 💻 Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/emarco177/langgraph-course.git
+cd langgraph-course
+git checkout project/reflection-agent
+
+# Install dependencies using Poetry
+poetry install
+```
+
+## 📁 Project Structure
 
 ```
-pip install -U langgraph
+reflection-agent/
+├── chains.py         # Defines the prompt chains for generation and reflection
+├── main.py           # Implements the core LangGraph structure
+├── pyproject.toml    # Project dependencies and configuration
+└── README.md         # This documentation
 ```
 
-Then, create an agent [using prebuilt components](https://langchain-ai.github.io/langgraph/agents/agents/):
+## 🛠️ Implementation Details
+
+### Main Components
+
+The reflection agent is built with two primary nodes:
+
+1. **Generation Node** (in `chains.py`):
+   - Uses a specialized prompt for creating Twitter content
+   - Responds to critique by refining previously generated content
+
+2. **Reflection Node** (in `chains.py`):
+   - Critiques the generated content against quality criteria
+   - Provides specific recommendations for improvement
+
+## 🔍 Example Usage
 
 ```python
-# pip install -qU "langchain[anthropic]" to call the model
+from langchain_core.messages import HumanMessage
+from main import graph
 
-from langgraph.prebuilt import create_react_agent
+# Create input prompt
+input_tweet = HumanMessage(content="""Make this tweet better:
+@LangChainAI — newly Tool Calling feature is seriously underrated.
+After a long wait, it's here- making the implementation of agents across different models with function calling - super easy.
+Made a video covering their newest blog post""")
 
-def get_weather(city: str) -> str:
-    """Get weather for a given city."""
-    return f"It's always sunny in {city}!"
-
-agent = create_react_agent(
-    model="anthropic:claude-3-7-sonnet-latest",
-    tools=[get_weather],
-    prompt="You are a helpful assistant"
-)
-
-# Run the agent
-agent.invoke(
-    {"messages": [{"role": "user", "content": "what is the weather in sf"}]}
-)
+# Run the reflection agent
+improved_tweet = graph.invoke(input_tweet)
+print(improved_tweet)
 ```
 
-For more information, see the [Quickstart](https://langchain-ai.github.io/langgraph/agents/agents/). Or, to learn how to build an [agent workflow](https://langchain-ai.github.io/langgraph/concepts/low_level/) with a customizable architecture, long-term memory, and other complex task handling, see the [LangGraph basics tutorials](https://langchain-ai.github.io/langgraph/tutorials/get-started/1-build-basic-chatbot/).
+## 📚 Video Lessons
 
-## Core benefits
+This project is built incrementally across multiple video lessons. Each commit represents a specific lesson in the series:
 
-LangGraph provides low-level supporting infrastructure for *any* long-running, stateful workflow or agent. LangGraph does not abstract prompts or architecture, and provides the following central benefits:
+| Lesson | Commit | Description |
+|--------|--------|-------------|
+| 1 | [adbee18](https://github.com/emarco177/langgaph-course/commit/adbee18) | **Getting Started**: Initial setup for the reflection agent |
+| 2 | [aab1105](https://github.com/emarco177/langgaph-course/commit/aab1105) | **Project Structure**: Adding core files and dependencies with Poetry |
+| 3 | [d2f15d2](https://github.com/emarco177/langgaph-course/commit/d2f15d2) | **Chain Implementation**: Building Twitter influencer prompts and generation logic |
+| 4 | [ed491a6](https://github.com/emarco177/langgaph-course/commit/ed491a6) | **Graph Implementation**: Connecting nodes with conditional logic for feedback loops |
 
-- [Durable execution](https://langchain-ai.github.io/langgraph/concepts/durable_execution/): Build agents that persist through failures and can run for extended periods, automatically resuming from exactly where they left off.
-- [Human-in-the-loop](https://langchain-ai.github.io/langgraph/concepts/human_in_the_loop/): Seamlessly incorporate human oversight by inspecting and modifying agent state at any point during execution.
-- [Comprehensive memory](https://langchain-ai.github.io/langgraph/concepts/memory/): Create truly stateful agents with both short-term working memory for ongoing reasoning and long-term persistent memory across sessions.
-- [Debugging with LangSmith](http://www.langchain.com/langsmith): Gain deep visibility into complex agent behavior with visualization tools that trace execution paths, capture state transitions, and provide detailed runtime metrics.
-- [Production-ready deployment](https://langchain-ai.github.io/langgraph/concepts/deployment_options/): Deploy sophisticated agent systems confidently with scalable infrastructure designed to handle the unique challenges of stateful, long-running workflows.
+Each lesson builds on the previous one, demonstrating how to incrementally build a reflection agent architecture using LangGraph.
 
-## LangGraph’s ecosystem
+## 👏 Acknowledgment
 
-While LangGraph can be used standalone, it also integrates seamlessly with any LangChain product, giving developers a full suite of tools for building agents. To improve your LLM application development, pair LangGraph with:
+This reflection agent implementation is based on the concepts and patterns described in the LangGraph documentation. For more information about reflection agents, visit the [LangGraph Reflection Tutorial](https://langchain-ai.github.io/langgraph/tutorials/reflection/reflection/).
 
-- [LangSmith](http://www.langchain.com/langsmith) — Helpful for agent evals and observability. Debug poor-performing LLM app runs, evaluate agent trajectories, gain visibility in production, and improve performance over time.
-- [LangSmith Deployment](https://langchain-ai.github.io/langgraph/concepts/langgraph_platform/) — Deploy and scale agents effortlessly with a purpose-built deployment platform for long running, stateful workflows. Discover, reuse, configure, and share agents across teams — and iterate quickly with visual prototyping in [LangGraph Studio](https://langchain-ai.github.io/langgraph/concepts/langgraph_studio/).
-- [LangChain](https://docs.langchain.com/oss/python/langchain/overview) – Provides integrations and composable components to streamline LLM application development.
-
-> [!NOTE]
-> Looking for the JS version of LangGraph? See the [JS repo](https://github.com/langchain-ai/langgraphjs) and the [JS docs](https://langchain-ai.github.io/langgraphjs/).
-
-## Additional resources
-
-- [Guides](https://langchain-ai.github.io/langgraph/guides/): Quick, actionable code snippets for topics such as streaming, adding memory & persistence, and design patterns (e.g. branching, subgraphs, etc.).
-- [Reference](https://langchain-ai.github.io/langgraph/reference/graphs/): Detailed reference on core classes, methods, how to use the graph and checkpointing APIs, and higher-level prebuilt components.
-- [Examples](https://langchain-ai.github.io/langgraph/examples/): Guided examples on getting started with LangGraph.
-- [LangChain Forum](https://forum.langchain.com/): Connect with the community and share all of your technical questions, ideas, and feedback.
-- [LangChain Academy](https://academy.langchain.com/courses/intro-to-langgraph): Learn the basics of LangGraph in our free, structured course.
-- [Templates](https://langchain-ai.github.io/langgraph/concepts/template_applications/): Pre-built reference apps for common agentic workflows (e.g. ReAct agent, memory, retrieval etc.) that can be cloned and adapted.
-- [Case studies](https://www.langchain.com/built-with-langgraph): Hear how industry leaders use LangGraph to ship AI applications at scale.
-
-## Acknowledgements
-
-LangGraph is inspired by [Pregel](https://research.google/pubs/pub37252/) and [Apache Beam](https://beam.apache.org/). The public interface draws inspiration from [NetworkX](https://networkx.org/documentation/latest/). LangGraph is built by LangChain Inc, the creators of LangChain, but can be used without LangChain.
+## 🔗 Links
+[![portfolio](https://img.shields.io/badge/my_portfolio-000?style=for-the-badge&logo=ko-fi&logoColor=white)](https://www.udemy.com/course/langgraph/?referralCode=FEA50E8CBA24ECD48212)
+[![linkedin](https://img.shields.io/badge/linkedin-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/eden-marco/)
+[![Twitter Follow](https://img.shields.io/twitter/follow/EdenEmarco177?style=social)](https://twitter.com/EdenEmarco177)
